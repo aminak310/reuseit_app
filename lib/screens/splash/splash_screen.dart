@@ -1,7 +1,8 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/app_colors.dart';
-import '../home/home_screen.dart';
+import '../onboarding/onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -13,44 +14,55 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _fadeAnim;
-  late Animation<double> _scaleAnim;
-  late Animation<double> _slideAnim;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _progressAnimation;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(milliseconds: 2400),
     );
 
-    _fadeAnim = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.6)),
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.0, 0.65, curve: Curves.easeIn),
     );
-    _scaleAnim = Tween<double>(begin: 0.6, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+
+    _scaleAnimation = Tween<double>(begin: 0.92, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.1, 0.7, curve: Curves.easeOutBack),
+      ),
     );
-    _slideAnim = Tween<double>(begin: 40, end: 0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.3, 0.8, curve: Curves.easeOut)),
+
+    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.4, 0.95, curve: Curves.easeInOut),
+      ),
     );
 
     _controller.forward();
 
-    Future.delayed(const Duration(milliseconds: 3000), () {
+    // Transition to Onboarding Screen after 3.2 seconds
+    Future.delayed(const Duration(milliseconds: 3200), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
-                const HomeScreen(),
+                const OnboardingScreen(),
             transitionsBuilder: (context, anim, secondaryAnimation, child) =>
                 FadeTransition(opacity: anim, child: child),
-            transitionDuration: const Duration(milliseconds: 600),
+            transitionDuration: const Duration(milliseconds: 650),
           ),
         );
       }
     });
   }
+
 
   @override
   void dispose() {
@@ -60,309 +72,387 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    const Color creamBg = Color(0xFFF7F7EE);
+    const Color forestGreen = Color(0xFF145C32);
+
     return Scaffold(
-      backgroundColor: AppColors.cream,
+      backgroundColor: creamBg,
       body: Stack(
         children: [
-          // Decorative circles top-right
-          Positioned(
-            top: -60,
-            right: -60,
-            child: Container(
-              width: 220,
-              height: 220,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primaryLight.withOpacity(0.5),
-              ),
+          // Corner botanical leaf sprigs
+          const Positioned.fill(
+            child: CustomPaint(
+              painter: _BotanicalCornerLeavesPainter(),
             ),
           ),
-          Positioned(
-            top: 40,
-            right: 40,
-            child: Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primaryLight,
-              ),
-            ),
-          ),
-          // Decorative circles bottom-left
-          Positioned(
-            bottom: -80,
-            left: -60,
-            child: Container(
-              width: 260,
-              height: 260,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primaryLight.withOpacity(0.4),
-              ),
-            ),
-          ),
-          // Leaf decorations
-          Positioned(
-            top: 80,
-            left: 20,
-            child: Icon(Icons.eco, size: 32, color: AppColors.primary.withOpacity(0.25)),
-          ),
-          Positioned(
-            top: 160,
-            right: 30,
-            child: Icon(Icons.eco, size: 20, color: AppColors.primary.withOpacity(0.2)),
-          ),
-          Positioned(
-            bottom: 180,
-            right: 40,
-            child: Icon(Icons.eco, size: 28, color: AppColors.primary.withOpacity(0.2)),
-          ),
-          // Main content
-          Center(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, child) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Logo container
-                    FadeTransition(
-                      opacity: _fadeAnim,
-                      child: ScaleTransition(
-                        scale: _scaleAnim,
-                        child: Container(
-                          width: 130,
-                          height: 130,
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryLight,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withOpacity(0.2),
-                                blurRadius: 30,
-                                spreadRadius: 10,
+
+          // Main Screen Content
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: IntrinsicHeight(
+                      child: AnimatedBuilder(
+                        animation: _controller,
+                        builder: (context, child) {
+                          return FadeTransition(
+                            opacity: _fadeAnimation,
+                            child: ScaleTransition(
+                              scale: _scaleAnimation,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    const SizedBox(height: 16),
+
+                          // Top: Logo + Brand Name + Tagline
+                          Column(
+                            children: [
+                              // Circular Logo Badge
+                              Container(
+                                width: 104,
+                                height: 104,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: forestGreen.withValues(alpha: 0.15),
+                                      blurRadius: 18,
+                                      offset: const Offset(0, 6),
+                                    ),
+                                  ],
+                                ),
+                                child: ClipOval(
+                                  child: Image.asset(
+                                    'assets/images/reuseit_logo.jpg',
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      color: const Color(0xFF1D6B3C),
+                                      child: const Icon(
+                                        Icons.recycling_rounded,
+                                        size: 58,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 18),
+
+                              // App Name "ReuseIt"
+                              Text(
+                                'ReuseIt',
+                                style: GoogleFonts.nunito(
+                                  fontSize: 40,
+                                  fontWeight: FontWeight.w900,
+                                  color: forestGreen,
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+
+                              // Subtitle "Give items a second life 🍃"
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Give items a second life',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w500,
+                                      color: const Color(0xFF2C553C),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  const Icon(
+                                    Icons.eco_rounded,
+                                    size: 18,
+                                    color: Color(0xFF2E7D32),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                          child: const Icon(
-                            Icons.recycling,
-                            size: 70,
-                            color: AppColors.primary,
+
+                          // Center: Cardboard Box Illustration
+                          Container(
+                            constraints: const BoxConstraints(
+                              maxWidth: 320,
+                              maxHeight: 320,
+                            ),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(28),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF2E7D32).withValues(alpha: 0.12),
+                                  blurRadius: 30,
+                                  offset: const Offset(0, 16),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(28),
+                              child: Image.asset(
+                                'assets/images/box_illustration.jpg',
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) =>
+                                    _buildFallbackBox(),
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-                    // App Name
-                    FadeTransition(
-                      opacity: _fadeAnim,
-                      child: Transform.translate(
-                        offset: Offset(0, _slideAnim.value),
-                        child: Text(
-                          'ReuseIt',
-                          style: GoogleFonts.poppins(
-                            fontSize: 44,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
-                            letterSpacing: 1.0,
+
+                          // Bottom: "Buy • Sell • Reuse" + Progress Pill Indicator
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 24.0),
+                            child: Column(
+                              children: [
+                                // Buy • Sell • Reuse
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    _buildActionText('Buy', forestGreen),
+                                    _buildDot(forestGreen),
+                                    _buildActionText('Sell', forestGreen),
+                                    _buildDot(forestGreen),
+                                    _buildActionText('Reuse', forestGreen),
+                                  ],
+                                ),
+                                const SizedBox(height: 22),
+
+                                // Progress Indicator Pill
+                                Container(
+                                  width: 90,
+                                  height: 5,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFD6E8D8),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: FractionallySizedBox(
+                                      widthFactor: (0.35 +
+                                              0.65 * _progressAnimation.value)
+                                          .clamp(0.0, 1.0),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: forestGreen,
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    FadeTransition(
-                      opacity: _fadeAnim,
-                      child: Transform.translate(
-                        offset: Offset(0, _slideAnim.value),
-                        child: Text(
-                          'Give items a second life 🌿',
-                          style: GoogleFonts.poppins(
-                            fontSize: 15,
-                            color: AppColors.textMid,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 60),
-                    // Cardboard box illustration placeholder
-                    FadeTransition(
-                      opacity: _fadeAnim,
-                      child: ScaleTransition(
-                        scale: _scaleAnim,
-                        child: _buildBoxIllustration(),
-                      ),
-                    ),
-                    const SizedBox(height: 50),
-                    // Buy • Sell • Reuse
-                    FadeTransition(
-                      opacity: _fadeAnim,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _dotLabel('Buy'),
-                          _bullet(),
-                          _dotLabel('Sell'),
-                          _bullet(),
-                          _dotLabel('Reuse'),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 50),
-                    // Loading indicator
-                    FadeTransition(
-                      opacity: _fadeAnim,
-                      child: SizedBox(
-                        width: 36,
-                        height: 36,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 3,
-                          color: AppColors.primary,
-                          backgroundColor: AppColors.primaryLight,
-                        ),
+                  ),
+                          );
+                        },
                       ),
                     ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    ],
-      ),
-    );
-  }
-
-  Widget _buildBoxIllustration() {
-    return SizedBox(
-      width: 200,
-      height: 160,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Box body
-          Positioned(
-            bottom: 0,
-            child: Container(
-              width: 160,
-              height: 100,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8A85A),
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-          // Box top left flap
-          Positioned(
-            bottom: 90,
-            left: 20,
-            child: Transform.rotate(
-              angle: -0.15,
-              child: Container(
-                width: 72,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD4904A),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(4),
-                    topRight: Radius.circular(2),
                   ),
-                ),
-              ),
+                );
+              },
             ),
-          ),
-          // Box top right flap
-          Positioned(
-            bottom: 90,
-            right: 20,
-            child: Transform.rotate(
-              angle: 0.15,
-              child: Container(
-                width: 72,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD4904A),
-                  borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(4),
-                    topLeft: Radius.circular(2),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          // Recycling icon on box
-          Positioned(
-            bottom: 20,
-            child: Icon(
-              Icons.recycling,
-              size: 50,
-              color: Colors.white.withOpacity(0.7),
-            ),
-          ),
-          // Small icons inside box (items)
-          Positioned(
-            bottom: 85,
-            left: 38,
-            child: Icon(Icons.book, size: 22, color: AppColors.primaryLight),
-          ),
-          Positioned(
-            bottom: 95,
-            child: Icon(Icons.checkroom, size: 24, color: const Color(0xFFFFD166)),
-          ),
-          Positioned(
-            bottom: 80,
-            right: 38,
-            child: Icon(Icons.lightbulb, size: 20, color: AppColors.accentYellow),
-          ),
-          // Leaves around box
-          Positioned(
-            top: 10,
-            left: 10,
-            child: Icon(Icons.eco, size: 28, color: AppColors.primary.withOpacity(0.6)),
-          ),
-          Positioned(
-            top: 30,
-            right: 12,
-            child: Icon(Icons.eco, size: 22, color: AppColors.primary.withOpacity(0.5)),
-          ),
-          Positioned(
-            top: 5,
-            right: 50,
-            child: Icon(Icons.eco, size: 18, color: AppColors.primary.withOpacity(0.4)),
           ),
         ],
       ),
     );
   }
 
-  Widget _dotLabel(String text) {
+  Widget _buildActionText(String text, Color color) {
     return Text(
       text,
       style: GoogleFonts.poppins(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textDark,
+        fontSize: 15,
+        fontWeight: FontWeight.w700,
+        color: color,
+        letterSpacing: 0.2,
       ),
     );
   }
 
-  Widget _bullet() {
+  Widget _buildDot(Color color) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14.0),
       child: Container(
-        width: 5,
-        height: 5,
-        decoration: const BoxDecoration(
+        width: 4,
+        height: 4,
+        decoration: BoxDecoration(
+          color: color,
           shape: BoxShape.circle,
-          color: AppColors.primaryMid,
         ),
       ),
     );
   }
+
+  Widget _buildFallbackBox() {
+    return Container(
+      width: 260,
+      height: 240,
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: const Center(
+        child: Icon(
+          Icons.inventory_2_rounded,
+          size: 100,
+          color: AppColors.primary,
+        ),
+      ),
+    );
+  }
+}
+
+/// Custom painter to draw delicate botanical watercolor-style leaves in the 4 corners
+class _BotanicalCornerLeavesPainter extends CustomPainter {
+  const _BotanicalCornerLeavesPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final leafPaintLight = Paint()
+      ..color = const Color(0xFFB5D4B6).withValues(alpha: 0.5)
+      ..style = PaintingStyle.fill;
+
+    final leafPaintDark = Paint()
+      ..color = const Color(0xFF8CAE8F).withValues(alpha: 0.45)
+      ..style = PaintingStyle.fill;
+
+    final stemPaint = Paint()
+      ..color = const Color(0xFF7B9F7E).withValues(alpha: 0.35)
+      ..strokeWidth = 1.8
+      ..style = PaintingStyle.stroke;
+
+    // Top-left leaves
+    _drawLeafBranch(
+      canvas,
+      start: const Offset(-10, -10),
+      end: const Offset(90, 100),
+      stemPaint: stemPaint,
+      leafPaint1: leafPaintLight,
+      leafPaint2: leafPaintDark,
+    );
+    _drawLeafBranch(
+      canvas,
+      start: const Offset(20, -15),
+      end: const Offset(120, 50),
+      stemPaint: stemPaint,
+      leafPaint1: leafPaintDark,
+      leafPaint2: leafPaintLight,
+    );
+
+    // Top-right leaves
+    _drawLeafBranch(
+      canvas,
+      start: Offset(size.width + 10, -10),
+      end: Offset(size.width - 90, 100),
+      stemPaint: stemPaint,
+      leafPaint1: leafPaintDark,
+      leafPaint2: leafPaintLight,
+    );
+    _drawLeafBranch(
+      canvas,
+      start: Offset(size.width - 20, -15),
+      end: Offset(size.width - 120, 50),
+      stemPaint: stemPaint,
+      leafPaint1: leafPaintLight,
+      leafPaint2: leafPaintDark,
+    );
+
+    // Bottom-left leaves
+    _drawLeafBranch(
+      canvas,
+      start: Offset(-10, size.height + 10),
+      end: Offset(80, size.height - 90),
+      stemPaint: stemPaint,
+      leafPaint1: leafPaintDark,
+      leafPaint2: leafPaintLight,
+    );
+    _drawLeafBranch(
+      canvas,
+      start: Offset(30, size.height + 15),
+      end: Offset(110, size.height - 40),
+      stemPaint: stemPaint,
+      leafPaint1: leafPaintLight,
+      leafPaint2: leafPaintDark,
+    );
+
+    // Bottom-right leaves
+    _drawLeafBranch(
+      canvas,
+      start: Offset(size.width + 10, size.height + 10),
+      end: Offset(size.width - 80, size.height - 90),
+      stemPaint: stemPaint,
+      leafPaint1: leafPaintLight,
+      leafPaint2: leafPaintDark,
+    );
+    _drawLeafBranch(
+      canvas,
+      start: Offset(size.width - 30, size.height + 15),
+      end: Offset(size.width - 110, size.height - 40),
+      stemPaint: stemPaint,
+      leafPaint1: leafPaintDark,
+      leafPaint2: leafPaintLight,
+    );
+  }
+
+  void _drawLeafBranch(
+    Canvas canvas, {
+    required Offset start,
+    required Offset end,
+    required Paint stemPaint,
+    required Paint leafPaint1,
+    required Paint leafPaint2,
+  }) {
+    // Stem path
+    final path = Path();
+    path.moveTo(start.dx, start.dy);
+    final ctrl = Offset(
+      (start.dx + end.dx) / 2 + 15,
+      (start.dy + end.dy) / 2 - 10,
+    );
+    path.quadraticBezierTo(ctrl.dx, ctrl.dy, end.dx, end.dy);
+    canvas.drawPath(path, stemPaint);
+
+    // Draw individual leaves along stem
+    for (int i = 1; i <= 4; i++) {
+      final t = i / 4.5;
+      final pos = Offset(
+        (1 - t) * (1 - t) * start.dx + 2 * (1 - t) * t * ctrl.dx + t * t * end.dx,
+        (1 - t) * (1 - t) * start.dy + 2 * (1 - t) * t * ctrl.dy + t * t * end.dy,
+      );
+
+      final angle = math.atan2(end.dy - start.dy, end.dx - start.dx);
+      final side = (i % 2 == 0) ? 1 : -1;
+      final leafAngle = angle + side * 0.65;
+
+      canvas.save();
+      canvas.translate(pos.dx, pos.dy);
+      canvas.rotate(leafAngle);
+
+      final leafPath = Path();
+      leafPath.moveTo(0, 0);
+      leafPath.quadraticBezierTo(10, -7, 22, 0);
+      leafPath.quadraticBezierTo(10, 7, 0, 0);
+
+      canvas.drawPath(leafPath, i.isEven ? leafPaint1 : leafPaint2);
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
