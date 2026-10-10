@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/app_colors.dart';
 
 class AddItemScreen extends StatefulWidget {
   const AddItemScreen({super.key});
@@ -11,11 +10,20 @@ class AddItemScreen extends StatefulWidget {
 
 class _AddItemScreenState extends State<AddItemScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
-  final _priceController = TextEditingController();
-  final _descController = TextEditingController();
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _priceController = TextEditingController();
+
   String? _selectedCategory;
   String? _selectedCondition;
+
+  // Working photo picker state with pre-available assets
+  final List<String> _selectedPhotos = [];
+
+  final List<String> _sampleAvailablePhotos = [
+    'assets/images/backpack.jpg',
+    'assets/images/winter_jacket.jpg',
+    'assets/images/textbook.jpg',
+  ];
 
   final List<String> _categories = [
     'Books',
@@ -39,86 +47,247 @@ class _AddItemScreenState extends State<AddItemScreen> {
   void dispose() {
     _titleController.dispose();
     _priceController.dispose();
-    _descController.dispose();
     super.dispose();
+  }
+
+  void _addPhoto() {
+    if (_selectedPhotos.length >= 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Maximum 5 photos allowed!',
+            style: GoogleFonts.poppins(),
+          ),
+          backgroundColor: const Color(0xFF145C32),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // Pick from available asset images in cycle
+    final String nextPhoto = _sampleAvailablePhotos[
+        _selectedPhotos.length % _sampleAvailablePhotos.length];
+
+    setState(() {
+      _selectedPhotos.add(nextPhoto);
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Photo added (${_selectedPhotos.length}/5) 📸',
+          style: GoogleFonts.poppins(),
+        ),
+        duration: const Duration(milliseconds: 1200),
+        backgroundColor: const Color(0xFF145C32),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
+  }
+
+  void _removePhoto(int index) {
+    setState(() {
+      _selectedPhotos.removeAt(index);
+    });
+  }
+
+  void _submitForm() {
+    if (_formKey.currentState!.validate()) {
+      if (_selectedCategory == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Please select a category',
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: const Color(0xFFD94D43),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      if (_selectedCondition == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Please select condition',
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: const Color(0xFFD94D43),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      // Show success dialog
+      showDialog(
+        context: context,
+        builder: (ctx) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(22),
+            ),
+            backgroundColor: Colors.white,
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 10),
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE5F5EC),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF145C32),
+                    size: 40,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Item Listed Successfully!',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF145C32),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Your item "${_titleController.text}" is now live and visible to buyers near you.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: const Color(0xFF4E6B56),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx); // Close dialog
+                      Navigator.pop(context); // Go back to Home
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF145C32),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                    ),
+                    child: Text(
+                      'Back to Home',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    const Color creamBg = Color(0xFFF7F7EE);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: creamBg,
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(context),
+            _buildAppBar(context),
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildPhotoSection(),
-                      const SizedBox(height: 24),
-                      _buildLabel('Item Title'),
+                      const SizedBox(height: 10),
+                      _buildPhotoUploadSection(),
+                      const SizedBox(height: 22),
+
+                      // Item Title
+                      _buildFieldLabel('Item Title'),
                       const SizedBox(height: 8),
                       _buildTextField(
                         controller: _titleController,
                         hint: 'e.g. Backpack, Jacket, Phone',
-                        validator: (v) =>
-                            v == null || v.isEmpty ? 'Enter item title' : null,
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) {
+                            return 'Please enter item title';
+                          }
+                          return null;
+                        },
                       ),
-                      const SizedBox(height: 20),
-                      _buildLabel('Category'),
+                      const SizedBox(height: 18),
+
+                      // Category
+                      _buildFieldLabel('Category'),
                       const SizedBox(height: 8),
-                      _buildDropdown(
-                        items: _categories,
-                        value: _selectedCategory,
+                      _buildDropdownField(
                         hint: 'Select category',
-                        onChanged: (v) =>
-                            setState(() => _selectedCategory = v),
+                        value: _selectedCategory,
+                        items: _categories,
+                        onChanged: (val) =>
+                            setState(() => _selectedCategory = val),
                       ),
-                      const SizedBox(height: 20),
-                      _buildLabel('Condition'),
+                      const SizedBox(height: 18),
+
+                      // Condition
+                      _buildFieldLabel('Condition'),
                       const SizedBox(height: 8),
-                      _buildDropdown(
-                        items: _conditions,
-                        value: _selectedCondition,
+                      _buildDropdownField(
                         hint: 'Select condition',
-                        onChanged: (v) =>
-                            setState(() => _selectedCondition = v),
+                        value: _selectedCondition,
+                        items: _conditions,
+                        onChanged: (val) =>
+                            setState(() => _selectedCondition = val),
                       ),
-                      const SizedBox(height: 20),
-                      _buildLabel('Price (Rs.)'),
+                      const SizedBox(height: 18),
+
+                      // Price (Rs.)
+                      _buildFieldLabel('Price (Rs.)'),
                       const SizedBox(height: 8),
                       _buildTextField(
                         controller: _priceController,
                         hint: 'e.g. 500',
                         keyboardType: TextInputType.number,
-                        validator: (v) =>
-                            v == null || v.isEmpty ? 'Enter a price' : null,
-                        prefix: Text(
-                          'Rs. ',
-                          style: GoogleFonts.poppins(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      _buildLabel('Description (Optional)'),
-                      const SizedBox(height: 8),
-                      _buildTextField(
-                        controller: _descController,
-                        hint: 'Describe your item, its condition, etc.',
-                        maxLines: 4,
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) {
+                            return 'Please enter price';
+                          }
+                          if (double.tryParse(val) == null) {
+                            return 'Please enter a valid number';
+                          }
+                          return null;
+                        },
                       ),
                       const SizedBox(height: 32),
+
+                      // Post Item Button
                       _buildPostButton(),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 30),
                     ],
                   ),
                 ),
@@ -130,117 +299,175 @@ class _AddItemScreenState extends State<AddItemScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildAppBar(BuildContext context) {
+    const Color forestGreen = Color(0xFF145C32);
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // Back button
           GestureDetector(
             onTap: () => Navigator.pop(context),
+            behavior: HitTestBehavior.opaque,
             child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
-                    blurRadius: 10,
-                  ),
-                ],
+              width: 38,
+              height: 38,
+              alignment: Alignment.center,
+              child: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                size: 20,
+                color: forestGreen,
               ),
-              child: const Icon(Icons.arrow_back_ios_new_rounded,
-                  size: 18, color: AppColors.textDark),
             ),
           ),
-          const SizedBox(width: 14),
+
+          // Title
           Text(
             'Add New Item',
-            style: GoogleFonts.poppins(
+            style: GoogleFonts.nunito(
               fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
+              fontWeight: FontWeight.w900,
+              color: forestGreen,
+              letterSpacing: 0.3,
             ),
           ),
-          const Spacer(),
-          const Icon(Icons.eco_rounded, color: AppColors.primary, size: 26),
+
+          // Top right decorative leaf
+          const Icon(
+            Icons.eco_rounded,
+            size: 24,
+            color: Color(0xFF86B98F),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildPhotoSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildLabel('Photos'),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: () {},
-          child: Container(
-            width: double.infinity,
-            height: 150,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: AppColors.border,
-                width: 1.5,
-                style: BorderStyle.solid,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 10,
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.camera_alt_rounded,
-                      color: AppColors.primary, size: 28),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Add Photos',
-                  style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Tap to add photos (max 5)',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: AppColors.textLight,
-                  ),
-                ),
-              ],
-            ),
+  Widget _buildPhotoUploadSection() {
+    const Color forestGreen = Color(0xFF145C32);
+
+    return GestureDetector(
+      onTap: _addPhoto,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: const Color(0xFFB8DCC0),
+            width: 1.5,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-      ],
+        child: Column(
+          children: [
+            // Camera outline icon
+            const Icon(
+              Icons.camera_alt_outlined,
+              size: 44,
+              color: forestGreen,
+            ),
+            const SizedBox(height: 8),
+
+            // Heading
+            Text(
+              'Add Photos',
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: forestGreen,
+              ),
+            ),
+            const SizedBox(height: 3),
+
+            // Subtitle
+            Text(
+              _selectedPhotos.isEmpty
+                  ? 'Tap to add photos (max 5)'
+                  : '${_selectedPhotos.length}/5 photos added (Tap to add more)',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                color: const Color(0xFF7E9F88),
+              ),
+            ),
+
+            // Preview thumbnails if photos are added
+            if (_selectedPhotos.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 60,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  shrinkWrap: true,
+                  itemCount: _selectedPhotos.length,
+                  itemBuilder: (context, i) {
+                    return Stack(
+                      children: [
+                        Container(
+                          width: 60,
+                          height: 60,
+                          margin: const EdgeInsets.only(right: 10),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: forestGreen),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.asset(
+                              _selectedPhotos[i],
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 2,
+                          right: 12,
+                          child: GestureDetector(
+                            onTap: () => _removePhoto(i),
+                            child: Container(
+                              width: 18,
+                              height: 18,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFD94D43),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close_rounded,
+                                size: 12,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildLabel(String text) {
+  Widget _buildFieldLabel(String label) {
     return Text(
-      text,
+      label,
       style: GoogleFonts.poppins(
         fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textDark,
+        fontWeight: FontWeight.w700,
+        color: const Color(0xFF145C32),
       ),
     );
   }
@@ -248,138 +475,163 @@ class _AddItemScreenState extends State<AddItemScreen> {
   Widget _buildTextField({
     required TextEditingController controller,
     required String hint,
-    String? Function(String?)? validator,
     TextInputType? keyboardType,
-    int maxLines = 1,
-    Widget? prefix,
+    String? Function(String?)? validator,
   }) {
-    return TextFormField(
-      controller: controller,
-      validator: validator,
-      keyboardType: keyboardType,
-      maxLines: maxLines,
-      style: GoogleFonts.poppins(fontSize: 14, color: AppColors.textDark),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: GoogleFonts.poppins(
-          color: AppColors.textLight,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        validator: validator,
+        style: GoogleFonts.poppins(
           fontSize: 14,
+          color: const Color(0xFF145C32),
+          fontWeight: FontWeight.w500,
         ),
-        prefixIcon: prefix != null
-            ? Padding(
-                padding: const EdgeInsets.only(left: 16, top: 2),
-                child: prefix,
-              )
-            : null,
-        prefixIconConstraints: prefix != null
-            ? const BoxConstraints(minWidth: 0, minHeight: 0)
-            : null,
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.border),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: GoogleFonts.poppins(
+            fontSize: 13,
+            color: const Color(0xFF8CAE99),
+            fontWeight: FontWeight.w400,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(
+              color: Color(0xFF145C32),
+              width: 1.5,
+            ),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(
+              color: Color(0xFFD94D43),
+              width: 1.2,
+            ),
+          ),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.accent),
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );
   }
 
-  Widget _buildDropdown({
-    required List<String> items,
-    required String? value,
+  Widget _buildDropdownField({
     required String hint,
+    required String? value,
+    required List<String> items,
     required void Function(String?) onChanged,
   }) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      onChanged: onChanged,
-      items: items
-          .map((item) => DropdownMenuItem(
-                value: item,
-                child: Text(item,
-                    style: GoogleFonts.poppins(
-                        fontSize: 14, color: AppColors.textDark)),
-              ))
-          .toList(),
-      hint: Text(hint,
-          style: GoogleFonts.poppins(
-              color: AppColors.textLight, fontSize: 14)),
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
-      icon: const Icon(Icons.keyboard_arrow_down_rounded,
-          color: AppColors.textMid),
-      dropdownColor: Colors.white,
+      child: DropdownButtonFormField<String>(
+        value: value,
+        items: items.map((item) {
+          return DropdownMenuItem(
+            value: item,
+            child: Text(
+              item,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: const Color(0xFF145C32),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          );
+        }).toList(),
+        onChanged: onChanged,
+        dropdownColor: Colors.white,
+        icon: const Icon(
+          Icons.keyboard_arrow_down_rounded,
+          color: Color(0xFF7E9F88),
+          size: 22,
+        ),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: GoogleFonts.poppins(
+            fontSize: 13,
+            color: const Color(0xFF8CAE99),
+            fontWeight: FontWeight.w400,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(
+              color: Color(0xFF145C32),
+              width: 1.5,
+            ),
+          ),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
+      ),
     );
   }
 
   Widget _buildPostButton() {
+    const Color forestGreen = Color(0xFF145C32);
+
     return SizedBox(
       width: double.infinity,
-      height: 56,
+      height: 54,
       child: ElevatedButton.icon(
-        onPressed: () {
-          if (_formKey.currentState!.validate()) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Item posted successfully! 🎉',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
-                ),
-                backgroundColor: AppColors.primary,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-            );
-            Navigator.pop(context);
-          }
-        },
-        icon: const Icon(Icons.send_rounded, size: 20),
+        onPressed: _submitForm,
+        icon: const Icon(Icons.near_me_rounded, size: 20),
         label: Text(
           'Post Item',
           style: GoogleFonts.poppins(
             fontSize: 16,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w700,
           ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: forestGreen,
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(27),
           ),
-          shadowColor: AppColors.primary.withOpacity(0.4),
+          shadowColor: forestGreen.withValues(alpha: 0.3),
         ),
       ),
     );
