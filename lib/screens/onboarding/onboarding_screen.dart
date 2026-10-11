@@ -186,7 +186,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           width: double.infinity,
                           height: 56,
                           child: ElevatedButton(
-                            onPressed: _goToHome,
+                            onPressed: _goToLogin,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: forestGreen,
                               foregroundColor: Colors.white,
@@ -210,7 +210,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                         // "I already have an account" button
                         TextButton(
-                          onPressed: _goToHome,
+                          onPressed: _goToLogin,
                           style: TextButton.styleFrom(
                             foregroundColor: forestGreen,
                             padding: const EdgeInsets.symmetric(

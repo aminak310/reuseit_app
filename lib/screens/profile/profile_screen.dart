@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../core/user_service.dart';
+import '../auth/login_screen.dart';
 import '../saved/saved_items_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -10,12 +12,10 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // User profile state
-  String _userName = 'Ayesha Khan';
-  final String _userEmail = 'ayesha@gmail.com';
-  int _listingsCount = 5;
-  int _savedCount = 3;
-  int _ordersCount = 12;
+  // Counters for profile stats
+  final int _listingsCount = 5;
+  final int _savedCount = 3;
+  final int _ordersCount = 12;
 
   // Toggle states for settings
   bool _notificationsEnabled = true;
@@ -121,7 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       controller: controller,
                       physics: const BouncingScrollPhysics(),
                       itemCount: myListings.length,
-                      separatorBuilder: (_, __) =>
+                      separatorBuilder: (_, _) =>
                           const Divider(color: Color(0xFFEDF4EF)),
                       itemBuilder: (context, i) {
                         final item = myListings[i];
@@ -408,16 +408,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   onTap: () {
                     Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Opening chat with ${c['name']}... 💬',
-                          style: GoogleFonts.poppins(),
-                        ),
-                        backgroundColor: forestGreen,
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
+                    UserService.logout(); Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const LoginScreen()), (route) => false);
                   },
                 );
               }),
@@ -535,7 +526,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 12),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    activeColor: forestGreen,
+                    activeThumbColor: forestGreen,
                     title: Text(
                       'Push Notifications',
                       style: GoogleFonts.poppins(
@@ -559,7 +550,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    activeColor: forestGreen,
+                    activeThumbColor: forestGreen,
                     title: Text(
                       'Location Services',
                       style: GoogleFonts.poppins(
@@ -588,16 +579,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: OutlinedButton(
                       onPressed: () {
                         Navigator.pop(ctx);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Logged out successfully',
-                              style: GoogleFonts.poppins(),
-                            ),
-                            backgroundColor: forestGreen,
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
+                        UserService.logout(); Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const LoginScreen()), (route) => false);
                       },
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Color(0xFFD94D43)),
@@ -768,66 +750,202 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _showEditProfileDialog(UserModel currentUser) {
+    const Color forestGreen = Color(0xFF145C32);
+    final nameCtrl = TextEditingController(text: currentUser.name);
+    final emailCtrl = TextEditingController(text: currentUser.email);
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+          backgroundColor: Colors.white,
+          title: Text(
+            'Edit Profile',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+              color: forestGreen,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                style: GoogleFonts.poppins(fontSize: 14),
+                decoration: InputDecoration(
+                  labelText: 'Full Name',
+                  labelStyle:
+                      GoogleFonts.poppins(color: const Color(0xFF4E6B56)),
+                  filled: true,
+                  fillColor: const Color(0xFFF7F7EE),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: emailCtrl,
+                style: GoogleFonts.poppins(fontSize: 14),
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  labelStyle:
+                      GoogleFonts.poppins(color: const Color(0xFF4E6B56)),
+                  filled: true,
+                  fillColor: const Color(0xFFF7F7EE),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF7E9F88),
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (nameCtrl.text.trim().isNotEmpty) {
+                  UserService.updateProfile(
+                    name: nameCtrl.text.trim(),
+                    email: emailCtrl.text.trim(),
+                  );
+                  Navigator.pop(ctx);
+                  UserService.logout(); Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const LoginScreen()), (route) => false);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: forestGreen,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                'Save',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildUserInfo() {
     const Color forestGreen = Color(0xFF145C32);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 22),
-      child: Row(
-        children: [
-          // Avatar circle
-          Container(
-            width: 76,
-            height: 76,
-            decoration: BoxDecoration(
-              color: const Color(0xFFB5D4B6),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: forestGreen.withValues(alpha: 0.12),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+    return ValueListenableBuilder<UserModel>(
+      valueListenable: UserService.currentUserNotifier,
+      builder: (context, user, _) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 22),
+          child: Row(
+            children: [
+              // Avatar circle with dynamic Initials
+              Container(
+                width: 76,
+                height: 76,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFC3E4C6), Color(0xFFA5D1AB)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: forestGreen.withValues(alpha: 0.14),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.person_rounded,
-                size: 48,
-                color: Color(0xFF2C553C),
+                child: Center(
+                  child: Text(
+                    user.initials,
+                    style: GoogleFonts.nunito(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      color: forestGreen,
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(width: 16),
+              const SizedBox(width: 16),
 
-          // User Name & Email
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _userName,
-                  style: GoogleFonts.nunito(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: forestGreen,
-                    letterSpacing: 0.3,
-                  ),
+              // User Name & Email (from Login)
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            user.name,
+                            style: GoogleFonts.nunito(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                              color: forestGreen,
+                              letterSpacing: 0.3,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        GestureDetector(
+                          onTap: () => _showEditProfileDialog(user),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFE5F5EC),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.edit_rounded,
+                              size: 14,
+                              color: forestGreen,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      user.email,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF6B8B77),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  _userEmail,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF6B8B77),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../core/user_service.dart';
 import '../home/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -26,6 +27,9 @@ class _LoginScreenState extends State<LoginScreen> {
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
+
+      // Save user credentials/name to global user service
+      UserService.loginWithInput(_emailController.text);
 
       // Simulate quick authentication
       Future.delayed(const Duration(milliseconds: 600), () {

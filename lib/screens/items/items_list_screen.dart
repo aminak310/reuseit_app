@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../data/items_repository.dart';
 import 'item_details_screen.dart';
 
 class ItemsListScreen extends StatefulWidget {
@@ -12,96 +13,28 @@ class ItemsListScreen extends StatefulWidget {
 
 class _ItemsListScreenState extends State<ItemsListScreen> {
   int _selectedFilter = 0;
-  final List<String> _filters = ['All', 'Men', 'Women', 'Kids'];
+  late final List<String> _filters;
   String _searchQuery = '';
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
+  late List<Map<String, dynamic>> _allItems;
 
-  final List<Map<String, dynamic>> _allItems = [
-    {
-      'name': 'Winter Jacket',
-      'price': 'Rs. 1,500',
-      'condition': 'Good condition',
-      'isGood': true,
-      'distance': '2 km away',
-      'image': 'assets/images/winter_jacket.jpg',
-      'category': 'Clothes',
-      'tag': 'Men',
-      'saved': false,
-      'description':
-          'Warm and stylish dark navy winter jacket. Water-resistant, hooded with multiple pockets. Perfect for winter weather.',
-      'sellerName': 'Usman Tariq',
-      'sellerJoinDate': 'Member since 2023',
-    },
-    {
-      'name': 'Sweatshirt',
-      'price': 'Rs. 800',
-      'condition': 'Good condition',
-      'isGood': true,
-      'distance': '3 km away',
-      'colorType': 'sweatshirt',
-      'category': 'Clothes',
-      'tag': 'Men',
-      'saved': false,
-      'description':
-          'Comfortable red fleece hoodie sweatshirt. Clean fabric, no tears or stains, gently used for one season.',
-      'sellerName': 'Hamza Ali',
-      'sellerJoinDate': 'Member since 2024',
-    },
-    {
-      'name': 'Jeans',
-      'price': 'Rs. 1,000',
-      'condition': 'Good condition',
-      'isGood': true,
-      'distance': '4 km away',
-      'colorType': 'jeans',
-      'category': 'Clothes',
-      'tag': 'Women',
-      'saved': false,
-      'description':
-          'Classic blue denim jeans, size 32. Durable cotton blend, straight fit, very clean condition.',
-      'sellerName': 'Sara Ahmed',
-      'sellerJoinDate': 'Member since 2023',
-    },
-    {
-      'name': 'T-shirt',
-      'price': 'Rs. 400',
-      'condition': 'Fair condition',
-      'isGood': false,
-      'distance': '5 km away',
-      'colorType': 'tshirt',
-      'category': 'Clothes',
-      'tag': 'Kids',
-      'saved': false,
-      'description':
-          'Casual pure cotton black t-shirt. Breathable, comfortable everyday wear.',
-      'sellerName': 'Zainab Bibi',
-      'sellerJoinDate': 'Member since 2024',
-    },
-    {
-      'name': 'Formal Shirt',
-      'price': 'Rs. 700',
-      'condition': 'Good condition',
-      'isGood': true,
-      'distance': '1 km away',
-      'colorType': 'shirt',
-      'category': 'Clothes',
-      'tag': 'Men',
-      'saved': false,
-      'description':
-          'Crisp cotton formal button-up shirt in light sky blue. Worn twice for interviews.',
-      'sellerName': 'Bilal Khan',
-      'sellerJoinDate': 'Member since 2022',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _filters = ItemsRepository.getFiltersForCategory(widget.category);
+    _allItems = ItemsRepository.getItemsForCategory(widget.category);
+  }
 
   List<Map<String, dynamic>> get _filteredItems {
     return _allItems.where((item) {
-      // Category filter check if not Clothes
+      final String name = (item['name'] as String).toLowerCase();
+      final String desc = (item['description'] as String? ?? '').toLowerCase();
+      final String query = _searchQuery.toLowerCase();
+
       final bool matchesSearch = _searchQuery.isEmpty ||
-          (item['name'] as String)
-              .toLowerCase()
-              .contains(_searchQuery.toLowerCase());
+          name.contains(query) ||
+          desc.contains(query);
 
       if (!matchesSearch) return false;
 
@@ -486,6 +419,23 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
   }
 
   Widget _buildFallbackIcon(Map<String, dynamic> item) {
+    final IconData? customIcon = item['icon'] as IconData?;
+    final Color? iconColor = item['iconColor'] as Color?;
+    final Color? iconBg = item['iconBg'] as Color?;
+
+    if (customIcon != null) {
+      return Container(
+        color: iconBg ?? const Color(0xFFF0F5F2),
+        child: Center(
+          child: Icon(
+            customIcon,
+            size: 44,
+            color: iconColor ?? const Color(0xFF145C32),
+          ),
+        ),
+      );
+    }
+
     final String type = item['colorType'] as String? ?? '';
     switch (type) {
       case 'sweatshirt':
